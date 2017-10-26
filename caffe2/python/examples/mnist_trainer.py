@@ -116,8 +116,10 @@ def AddBookkeepingOperators(model):
         # gradients.
 
 def TrainTest(args):
+    if not os.path.exists(args.save_folder):
+        os.makedirs(args.save_folder)
+        
     np.random.seed(123)  # make test deterministic
-
     arg_scope = {"order": "NCHW"}
     train_model = model_helper.ModelHelper(name="mnist_train", arg_scope=arg_scope)
     data, label = AddInput(
@@ -238,7 +240,7 @@ def main():
 
     parser.add_argument("--save_folder",
                     type=str,
-                    default="result/",
+                    default="result/mnist/",
                     help="where to save training result",
                     required=False)
 
