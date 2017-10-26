@@ -82,9 +82,12 @@ def AddTrainingOperators(model, loss):
     model.AddGradientOperators([loss])
     optimizer.add_weight_decay(model, 5e-4)
     stepsz = int(10 * 60000 / 128)
-    opt = optimizer.build_sgd(model, base_learning_rate=0.01, policy="step", stepsize=stepsz, gamma=0.1, momentum=0.9)
-    # opt = optimizer.build_sgd(model, base_learning_rate=0.01, policy="step", stepsize=1, gamma=0.999, momentum=0.9)
-
+    opt = optimizer.build_sgd(model, 
+        base_learning_rate=0.01, 
+        policy="step", 
+        stepsize=stepsz, 
+        gamma=0.1, 
+        momentum=0.9)
     # opt = optimizer.build_yellowfin(model)
 
     return opt
@@ -155,8 +158,11 @@ def TrainTest(args):
 
     # print (str(train_model.param_init_net.Proto()))
     graph = net_drawer.GetPydotGraphMinimal(train_model.net.Proto(),
-                                            "mnist", rankdir="TB", minimal_dependency=True)
-    graph.write("/home/tpys/tools/caffe2/caffe2/python/examples/mnist.pdf", format='pdf')
+                                            "mnist", 
+                                            rankdir="LR", 
+                                            minimal_dependency=True)
+
+    graph.write(os.path.join(args.save_folder, "mnist.pdf"), format='pdf')
 
     total_iters = 15000
     accuracy = np.zeros(total_iters)
@@ -208,7 +214,7 @@ def TrainTest(args):
         txts.append(txt)
 
     fname = "distance-margin-{}.png".format(args.margin)
-    plt.savefig(fname)
+    plt.savefig(os.path.join(args.save_folder, fname))
 
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111)
@@ -218,7 +224,7 @@ def TrainTest(args):
     plt.show()
 
     fname = "loss-margin-{}.png".format(args.margin)
-    plt.savefig(fname)
+    plt.savefig(os.path.join(args.save_folder, fname))
     print('test_accuracy: %f' % test_accuracy.mean())
 
 
@@ -226,9 +232,15 @@ def main():
     parser = argparse.ArgumentParser(description="Caffe2: MNIST training")
     parser.add_argument("--data_folder",
                         type=str,
-                        default="/home/tpys/caffe2_notebooks/tutorial_data/mnist",
+                        default="dataset/",
                         help="Path to training and test data",
                         required=False)
+
+    parser.add_argument("--save_folder",
+                    type=str,
+                    default="result/",
+                    help="where to save training result",
+                    required=False)
 
     parser.add_argument("--num_labels",
                         type=int,
@@ -243,7 +255,7 @@ def main():
     parser.add_argument("--margin",
                         type=int,
                         default=4,
-                        help="A-softmax margin type")
+                        help="L-softmax margin type")
 
     args = parser.parse_args()
     TrainTest(args)

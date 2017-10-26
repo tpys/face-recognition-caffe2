@@ -40,6 +40,8 @@ from caffe2.python.helpers.conv import *
 from caffe2.python.helpers.tools import *
 from caffe2.python.helpers.elementwise_linear import *
 
+#custom helpers
+from caffe2.python.helpers.lsoftmax import *
 
 class HelperWrapper(object):
     _registry = {
@@ -77,6 +79,9 @@ class HelperWrapper(object):
         'elementwise_linear': elementwise_linear,
         'layer_norm': layer_norm,
         'batch_mat_mul' : batch_mat_mul,
+
+        #custom 
+        'lsoftmax': lsoftmax
     }
 
     def __init__(self, wrapped):

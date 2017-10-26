@@ -34,8 +34,6 @@ namespace caffe2 {
                 k_table_.push_back(std::cos(i * pi / margin_));
                 c_table_.push_back(factor);
             }
-
-            LOG(INFO) << "margin " << margin_ << " " << base_ << " " << lambda_min_;
         }
 
         ~LSoftmaxWithLossOp() {}
