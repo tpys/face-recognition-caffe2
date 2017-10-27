@@ -279,11 +279,11 @@ def RunEpoch(args,
 
     #lfw verification test
     elif args.test_data_type == 'LFW' and args.load_model_path is not None:
-        lfw_pairs = os.path.join('./dataset', 'lfw_pairs.txt')
+        lfw_pairs = os.path.join(os.path.abspath('../dataset'), 'lfw_pairs.txt')
         if not os.path.exists(lfw_pairs):
             log.error('There is no lfw_pairs.txt in folder dataset/lfw!!!')
         else:
-            _, actual_issame = lfw.get_paths(args.test_data, lfw.read_pairs(lfw_pairs), 'jpg')
+            actual_issame = lfw.get_issame_list(lfw.read_pairs(lfw_pairs))
             num_test_images = len(actual_issame) * 2
             assert num_test_images % total_batch_size == 0, \
                 'The number of lfw test images must be interger multiple of the test bach size'
@@ -292,8 +292,8 @@ def RunEpoch(args,
             for _ in range(0, num_batches):
                 workspace.RunNet(test_model.net.Proto().name)
                 for g in test_model._devices:
-                    display_activation_map(plt_kernel, channel=0, batch_num=16)
-                    plt.pause(0.001)
+                    # display_activation_map(plt_kernel, channel=0, batch_num=16)
+                    # plt.pause(0.001)
                     label = workspace.FetchBlob('{}_{}'.format(test_model._device_prefix, g) + '/label')
                     embedding = workspace.FetchBlob('{}_{}'.format(test_model._device_prefix, g) + '/fc5')
                     emb_array[label] = embedding
@@ -672,7 +672,7 @@ def main():
     parser.add_argument("--num_labels", type=int, default=10575,
                         help="Number of labels")
 
-    parser.add_argument("--batch_size", type=int, default=256,
+    parser.add_argument("--batch_size", type=int, default=200,
                         help="Batch size, total over all GPUs")
 
     parser.add_argument("--epoch_size", type=int, default=256000,

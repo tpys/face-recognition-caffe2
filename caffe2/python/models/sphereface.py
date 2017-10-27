@@ -35,7 +35,7 @@ class SpherefaceBuilder():
                    stride=1,
                    pad=1,
                    no_bias=0,
-                   weight_init=gaussian,
+                   weight_init=msra,
                    bias_init=constant):
         self.prev_blob = brew.conv(self.model,
                                    in_blob,
