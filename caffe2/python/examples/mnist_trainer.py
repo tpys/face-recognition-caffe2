@@ -234,7 +234,7 @@ def main():
     parser = argparse.ArgumentParser(description="Caffe2: MNIST training")
     parser.add_argument("--data_folder",
                         type=str,
-                        default="dataset/",
+                        default="/media/tpys/ssd/mnist",
                         help="Path to training and test data",
                         required=False)
 

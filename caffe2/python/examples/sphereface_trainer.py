@@ -39,6 +39,7 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import auc
 from caffe2.python import visualize2, net_drawer2
 from datetime import datetime
+import caffe2.python.dataset.lfw as lfw
 
 '''
 Parallelized multi-GPU distributed trainer for Resnet 50. Can be used to train
@@ -208,72 +209,106 @@ def RunEpoch(args,
     TODO: add checkpointing here.
     '''
     # TODO: add loading from checkpoint
-    log.info("Starting epoch {}/{}".format(epoch, args.num_epochs))
-    epoch_iters = int(args.epoch_size / total_batch_size / num_shards)
-    epoch_loss = []
-    epoch_accuracy = []
-    for i in range(epoch_iters):
-        # This timeout is required (temporarily) since CUDA-NCCL
-        # operators might deadlock when synchronizing between GPUs.
-        timeout = 600.0 if i == 0 else 60.0
-        with timeout_guard.CompleteInTimeOrDie(timeout):
-            t1 = time.time()
-            workspace.RunNet(train_model.net.Proto().name)
-            t2 = time.time()
-            dt = t2 - t1
+    if args.test_data_type == 'VAL':
+        log.info("Starting epoch {}/{}".format(epoch, args.num_epochs))
+        epoch_iters = int(args.epoch_size / total_batch_size / num_shards)
+        epoch_loss = []
+        epoch_accuracy = []
+        for i in range(epoch_iters):
+            # This timeout is required (temporarily) since CUDA-NCCL
+            # operators might deadlock when synchronizing between GPUs.
+            timeout = 600.0 if i == 0 else 60.0
+            with timeout_guard.CompleteInTimeOrDie(timeout):
+                t1 = time.time()
+                workspace.RunNet(train_model.net.Proto().name)
+                t2 = time.time()
+                dt = t2 - t1
 
-        # display_first_image()
+            # display_first_image()
 
-        fmt = "Finished iteration {}/{} of epoch {} ({:.2f} images/sec)"
-        log.info(fmt.format(i + 1, epoch_iters, epoch, total_batch_size / dt))
-        prefix = "{}_{}".format(
-            train_model._device_prefix,
-            train_model._devices[0])
+            fmt = "Finished iteration {}/{} of epoch {} ({:.2f} images/sec)"
+            log.info(fmt.format(i + 1, epoch_iters, epoch, total_batch_size / dt))
+            prefix = "{}_{}".format(
+                train_model._device_prefix,
+                train_model._devices[0])
+            accuracy = workspace.FetchBlob(prefix + '/accuracy')
+            loss = workspace.FetchBlob(prefix + '/loss')
+            train_fmt = "Training loss: {}, accuracy: {}"
+            log.info(train_fmt.format(loss, accuracy))
+            epoch_loss.append(loss)
+            epoch_accuracy.append(accuracy)
+
+        num_images = epoch * epoch_iters * total_batch_size
+        prefix = "{}_{}".format(train_model._device_prefix, train_model._devices[0])
         accuracy = workspace.FetchBlob(prefix + '/accuracy')
         loss = workspace.FetchBlob(prefix + '/loss')
-        train_fmt = "Training loss: {}, accuracy: {}"
-        log.info(train_fmt.format(loss, accuracy))
-        epoch_loss.append(loss)
-        epoch_accuracy.append(accuracy)
+        learning_rate = workspace.FetchBlob(
+            data_parallel_model.GetLearningRateBlobNames(train_model)[0]
+        )
+        test_accuracy = 0
+        if (test_model is not None):
+            # Run 100 iters of testing
+            ntests = 0
+            for _ in range(0, 100):
+                workspace.RunNet(test_model.net.Proto().name)
+                for g in test_model._devices:
+                    test_accuracy += np.asscalar(workspace.FetchBlob(
+                        "{}_{}".format(test_model._device_prefix, g) + '/accuracy'
+                    ))
+                    ntests += 1
+            test_accuracy /= ntests
+        else:
+            test_accuracy = (-1)
 
-    num_images = epoch * epoch_iters * total_batch_size
-    prefix = "{}_{}".format(train_model._device_prefix, train_model._devices[0])
-    accuracy = workspace.FetchBlob(prefix + '/accuracy')
-    loss = workspace.FetchBlob(prefix + '/loss')
-    learning_rate = workspace.FetchBlob(
-        data_parallel_model.GetLearningRateBlobNames(train_model)[0]
-    )
-    test_accuracy = 0
-    if (test_model is not None):
-        # Run 100 iters of testing
-        ntests = 0
-        for _ in range(0, 100):
-            workspace.RunNet(test_model.net.Proto().name)
-            for g in test_model._devices:
-                test_accuracy += np.asscalar(workspace.FetchBlob(
-                    "{}_{}".format(test_model._device_prefix, g) + '/accuracy'
-                ))
-                ntests += 1
-        test_accuracy /= ntests
-    else:
-        test_accuracy = (-1)
+        explog.log(
+            input_count=num_images,
+            batch_count=(i + epoch * epoch_iters),
+            additional_values={
+                'accuracy': accuracy,
+                'loss': loss,
+                'learning_rate': learning_rate,
+                'epoch': epoch,
+                'test_accuracy': test_accuracy,
+            }
+        )
+        assert loss < 40, "Exploded gradients :("
+        if DEBUG_TRAINING:
+            device_name = "{}_{}".format(test_model._device_prefix, test_model._devices[0])
+            display_activation_map(plt_kernel, channel=0, batch_num=16, device_name=device_name)
+            plt.pause(0.001) 
 
-    explog.log(
-        input_count=num_images,
-        batch_count=(i + epoch * epoch_iters),
-        additional_values={
-            'accuracy': accuracy,
-            'loss': loss,
-            'learning_rate': learning_rate,
-            'epoch': epoch,
-            'test_accuracy': test_accuracy,
-        }
-    )
-    assert loss < 40, "Exploded gradients :("
-    if DEBUG_TRAINING:
-        device_name = "{}_{}".format(test_model._device_prefix, test_model._devices[0])
-        display_activation_map(plt_kernel, channel=0, batch_num=16, device_name=device_name)
-        plt.pause(0.001)
+    #lfw verification test
+    elif args.test_data_type == 'LFW' and args.load_model_path is not None:
+        lfw_pairs = os.path.join('./dataset', 'lfw_pairs.txt')
+        if not os.path.exists(lfw_pairs):
+            log.error('There is no lfw_pairs.txt in folder dataset/lfw!!!')
+        else:
+            _, actual_issame = lfw.get_paths(args.test_data, lfw.read_pairs(lfw_pairs), 'jpg')
+            num_test_images = len(actual_issame) * 2
+            assert num_test_images % total_batch_size == 0, \
+                'The number of lfw test images must be interger multiple of the test bach size'
+            num_batches = num_test_images // total_batch_size
+            emb_array = np.zeros((num_test_images, args.feature_dim))
+            for _ in range(0, num_batches):
+                workspace.RunNet(test_model.net.Proto().name)
+                for g in test_model._devices:
+                    display_activation_map(plt_kernel, channel=0, batch_num=16)
+                    plt.pause(0.001)
+                    label = workspace.FetchBlob('{}_{}'.format(test_model._device_prefix, g) + '/label')
+                    embedding = workspace.FetchBlob('{}_{}'.format(test_model._device_prefix, g) + '/fc5')
+                    emb_array[label] = embedding
+
+            _, _, test_accuracy, test_val, val_std, far = lfw.evaluate(emb_array,
+                                                                       actual_issame,
+                                                                       nrof_folds=10)
+            log.info('Accuracy: %1.3f+-%1.3f' % (np.mean(test_accuracy), np.std(test_accuracy)))
+            log.info('Validation rate: %2.5f+-%2.5f @ FAR=%2.5f' % (test_val, val_std, far))
+
+    #megaface verification test
+    elif args.test_data_type == 'MEGAFACE' and args.load_model_path is not None:
+        pass
+
+
 
     return epoch + 1, epoch_loss, epoch_accuracy
 
@@ -571,7 +606,7 @@ def Train(args):
     old_x = 0
     old_loss = 0
     old_acc = 0
-    while epoch < args.num_epochs:
+    while epoch < args.num_epochs or args.test_data_type != 'VAL':
         epoch, epoch_loss, epoch_accuracy = RunEpoch(
             args,
             epoch,
@@ -615,6 +650,11 @@ def main():
                         help="Path to training data (or 'null' to simulate)")
     parser.add_argument("--test_data", type=str, default="/media/tpys/ssd/lfw_align_128x128_lmdb",
                         help="Path to test data")
+
+    parser.add_argument("--test_data_type", type=str, default="LFW", 
+                        choices=['VAL', 'LFW', 'MEGAFACE'],
+                        help="the type of test data, support validation and lfw verification")
+
     parser.add_argument("--db_type", type=str, default="lmdb",
                         help="Database type (such as lmdb or leveldb)")
     parser.add_argument("--gpus", type=str, default="1",
@@ -661,7 +701,7 @@ def main():
                         help="Path to directory to use for rendezvous")
     parser.add_argument("--save_model_name", type=str, default="sphereface",
                         help="Save the trained model to a given name")
-    parser.add_argument("--load_model_path", type=str, default=None,
+    parser.add_argument("--load_model_path", type=str, default='./result/casia/20171026-191951/sphereface_35.mdl',
                         help="Load previously saved model to continue training")
     parser.add_argument("--use_cpu", type=bool, default=False,
                         help="Use CPU instead of GPU")
