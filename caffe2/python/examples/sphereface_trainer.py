@@ -37,7 +37,7 @@ from caffe2.python.predictor_constants import predictor_constants as predictor_c
 
 from matplotlib import pyplot as plt
 from sklearn.metrics import auc
-from caffe2.python import visualize2, net_drawer
+from caffe2.python import visualize2, net_drawer2
 from datetime import datetime
 
 '''
@@ -56,7 +56,6 @@ you can either use a directory path that is visible to all processes
 passing the `file_store_path` argument. Use the latter by passing the
 `redis_host` and `redis_port` arguments.
 '''
-
 logging.basicConfig()
 log = logging.getLogger("sphereface_trainer")
 log.setLevel(logging.DEBUG)
@@ -408,8 +407,8 @@ def Train(args):
         return [loss]
 
     def add_optimizer(model):
-        stepsz = int(30 * args.epoch_size / total_batch_size / num_shards)
-
+        # stepsz = int(30 * args.epoch_size / total_batch_size / num_shards)
+        stepsz = 1
         if args.dtype == 'float16':
             opt = optimizer.build_fp16_sgd(
                 model,
@@ -419,7 +418,7 @@ def Train(args):
                 weight_decay=args.weight_decay,   # weight decay included
                 policy="step",
                 stepsize=stepsz,
-                gamma=0.1
+                gamma=0.9999
             )
         else:
             optimizer.add_weight_decay(model, args.weight_decay)
@@ -430,7 +429,7 @@ def Train(args):
                 nesterov=1,
                 policy="step",
                 stepsize=stepsz,
-                gamma=0.1
+                gamma=0.9999
             )
         return opt
 
@@ -491,13 +490,6 @@ def Train(args):
     workspace.RunNetOnce(train_model.param_init_net)
     workspace.CreateNet(train_model.net)
 
-    graph = net_drawer.GetPydotGraphMinimal(train_model.net.Proto(),
-                                            "sphereface", 
-                                            rankdir="LR", 
-                                            minimal_dependency=True)
-
-    graph.write("sphereface.pdf", format='pdf')
-    # graph.write(os.path.join(args.file_store_path, "sphereface.pdf"), format='pdf')
 
     # Add test model, if specified
     test_model = None
@@ -539,6 +531,10 @@ def Train(args):
         )
         workspace.RunNetOnce(test_model.param_init_net)
         workspace.CreateNet(test_model.net)
+        graph = net_drawer2.GetPydotGraphMinimal(test_model.net.Proto(),
+                                                "sphereface", 
+                                                rankdir="TB")
+        graph.write(os.path.join(save_dir, "sphereface.pdf"), format='pdf')
 
     epoch = 0
     # load the pre-trained model and reset epoch
@@ -563,7 +559,8 @@ def Train(args):
         args.num_labels,
         args.base_learning_rate,
     )
-    explog = experiment_util.ModelTrainerLog(expname, args)
+
+    explog = experiment_util.ModelTrainerLog(os.path.join(save_dir, expname), args)
 
     kernel_fig, plt_kernel = plt.subplots(nrows=4, ncols=5, figsize=(14, 14))
     loss_fig, plt_loss = plt.subplots(1)
@@ -638,10 +635,10 @@ def main():
     parser.add_argument("--batch_size", type=int, default=256,
                         help="Batch size, total over all GPUs")
 
-    parser.add_argument("--epoch_size", type=int, default=2560,
+    parser.add_argument("--epoch_size", type=int, default=256000,
                         help="Number of images/epoch, total over all machines")
 
-    parser.add_argument("--num_epochs", type=int, default=20,
+    parser.add_argument("--num_epochs", type=int, default=35,
                         help="Num epochs.")
     parser.add_argument("--base_learning_rate", type=float, default=0.1,
                         help="Initial learning rate.")
@@ -660,7 +657,7 @@ def main():
     parser.add_argument("--redis_port", type=int, default=6379,
                         help="Port of Redis server (for rendezvous)")
     parser.add_argument("--file_store_path", type=str,
-                        default="./result/casia",
+                        default='./result/casia/',
                         help="Path to directory to use for rendezvous")
     parser.add_argument("--save_model_name", type=str, default="sphereface",
                         help="Save the trained model to a given name")
