@@ -20,23 +20,10 @@ Caffe2 is a lightweight, modular, speed, so i want to do face recognition experi
 
 ## Result
 - mnist_example for lsoftmax 
-  * margin = 1 
-    <p align='center'>
-    <img src='caffe2/python/examples/result/mnist/distance-margin-1.png' title='margin=1' style='max-width:600px'></img>
-    </p>
-    
-  * margin = 2
-    <p align='center'>
-    <img src='caffe2/python/examples/result/mnist/distance-margin-2.png'style='max-width:600px'</img>
-    </p>
-  * margin = 3
-    <p align='center'>
-    <img src='caffe2/python/examples/result/mnist/distance-margin-3.png'style='max-width:600px'</img>
-    </p>
-  * margin = 4 
-    <p align='center'>
-    <img src='caffe2/python/examples/result/mnist/distance-margin-4.png'style='max-width:600px'</img>
-    </p>
+  * margin = 1  <p align='center'><img src='caffe2/python/examples/result/mnist/distance-margin-1.png' style='max-width:600px'></img></p> 
+  * margin = 2  <p align='center'><img src='caffe2/python/examples/result/mnist/distance-margin-2.png' style='max-width:600px'</img></p>
+  * margin = 3  <p align='center'><img src='caffe2/python/examples/result/mnist/distance-margin-3.png' style='max-width:600px'</img></p>
+  * margin = 4  <p align='center'><img src='caffe2/python/examples/result/mnist/distance-margin-4.png' style='max-width:600px'</img></p>
   
 ## Build
 Use my version of  caffe2, follow origin caffe2 installation [Installation](http://caffe2.ai/docs/getting-started.html)
