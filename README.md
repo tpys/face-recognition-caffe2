@@ -22,7 +22,7 @@ Caffe2 is a lightweight, modular, speed, so i want to do face recognition experi
 - mnist_example for lsoftmax 
   * margin = 1 
     <p align='center'>
-    <img src='caffe2/python/examples/result/mnist/distance-margin-1.png'style='max-width:600px'></img>
+    <img src='caffe2/python/examples/result/mnist/distance-margin-1.png' title='margin=1' style='max-width:600px'></img>
     </p>
     
   * margin = 2
