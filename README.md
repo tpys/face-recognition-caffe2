@@ -1,34 +1,41 @@
-# Caffe2
+# Face Recognition for Caffe2
+Caffe2 is a lightweight, modular, speed, so i want to do face recognition experiment with it, like light cnn, center loss, large margin softmax, Angular softmax and so on.
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg)](https://opensource.org/licenses/Apache-2.0)
-[![TravisCI Build Status](https://img.shields.io/travis/caffe2/caffe2.svg)](https://travis-ci.org/caffe2/caffe2)
-[![Appveyor Build Status](https://img.shields.io/appveyor/ci/Yangqing/caffe2.svg)](https://ci.appveyor.com/project/Yangqing/caffe2)
+## Reference
+[origin_lsoftmax](https://github.com/wy1iu/LargeMargin_Softmax_Loss.git)
+[mxnet_lsoftmax](https://github.com/luoyetx/mx-lsoftmax.git)
 
-Caffe2 is a lightweight, modular, and scalable deep learning framework. Building on the original [Caffe](http://caffe.berkeleyvision.org), Caffe2 is designed with expression, speed, and modularity in mind.
+## Files
+- Original Caffe2 library
+- Large margin softmax operator
+  * caffe2/operators/lsoftmax_with_loss.h
+  * caffe2/operators/lsoftmax_with_loss.cc
+  * caffe2/operators/lsoftmax_with_loss.cu
+  * caffe2/python/operator_test/lsoftmax_with_loss_test.py
+- face_example
+  * caffe2/python/examples/sphereface_trainer.py
+  * caffe2/python/models/sphereface.py
+- mnist_example
+  * caffe2/python/examples/mnist_trainer.py
 
-## News and Events
-
-[Caffe2 research award competition request for proposals](https://research.fb.com/programs/research-awards/proposals/caffe2-rfp/)
-
-## Questions and Feedback
-
-Please use Github issues (https://github.com/caffe2/caffe2/issues) to ask questions, report bugs, and request new features.
-
-Please participate in our survey (https://www.surveymonkey.com/r/caffe2). We will send you information about new releases and special developer events/webinars.
-
-
-## License
-
-Caffe2 is released under the [Apache 2.0 license](https://github.com/caffe2/caffe2/blob/master/LICENSE). See the [NOTICE](https://github.com/caffe2/caffe2/blob/master/NOTICE) file for details.
-
-### Further Resources on [Caffe2.ai](http://caffe2.ai)
-
-* [Installation](http://caffe2.ai/docs/getting-started.html)
-* [Learn More](http://caffe2.ai/docs/learn-more.html)
-* [Upgrading to Caffe2](http://caffe2.ai/docs/caffe-migration.html)
-* [Datasets](http://caffe2.ai/docs/datasets.html)
-* [Model Zoo](http://caffe2.ai/docs/zoo.html)
-* [Tutorials](http://caffe2.ai/docs/tutorials.html)
-* [Operators Catalogue](http://caffe2.ai/docs/operators-catalogue.html)
-* [C++ API](http://caffe2.ai/doxygen-c/html/classes.html)
-* [Python API](http://caffe2.ai/doxygen-python/html/namespaces.html)
+## Result
+- mnist_example for lsoftmax 
+  * margin = 1 
+    <p align='center'>
+    <img src='caffe2/python/examples/result/mnist/distance-margin-1.png'></img>
+    </p>
+  * margin = 2
+    <p align='center'>
+    <img src='caffe2/python/examples/result/mnist/distance-margin-1.png'></img>
+    </p>
+  * margin = 3
+    <p align='center'>
+    <img src='caffe2/python/examples/result/mnist/distance-margin-1.png'></img>
+    </p>
+  * margin = 4 
+    <p align='center'>
+    <img src='caffe2/python/examples/result/mnist/distance-margin-1.png'></img>
+    </p>
+  
+## Build
+Use my version of  caffe2, follow origin caffe2 installation [Installation](http://caffe2.ai/docs/getting-started.html)
