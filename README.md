@@ -2,8 +2,8 @@
 Caffe2 is a lightweight, modular, speed, so i want to do face recognition experiment with it, like light cnn, center loss, large margin softmax, Angular softmax and so on.
 
 ## Reference
-[origin_lsoftmax](https://github.com/wy1iu/LargeMargin_Softmax_Loss.git)
-[mxnet_lsoftmax](https://github.com/luoyetx/mx-lsoftmax.git)
+- [origin_lsoftmax](https://github.com/wy1iu/LargeMargin_Softmax_Loss.git)
+- [mxnet_lsoftmax](https://github.com/luoyetx/mx-lsoftmax.git)
 
 ## Files
 - Original Caffe2 library
